@@ -8,9 +8,9 @@ import { GetOrderOptionsDto } from './dto/query.get-order.dto';
 import { GetMatchOrderOptionsDto } from './dto/query.match-order.dto';
 
 @Injectable()
-export class BlockService  {
-  // private readonly web3: Web3;
-  // private readonly contracts: any[];
+export class BlockService implements OnModuleInit {
+  private readonly web3: Web3;
+  private readonly contracts: any[];
 
   constructor(
     @InjectRepository(Order)
@@ -19,136 +19,136 @@ export class BlockService  {
   ) {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////// по хорошему вынести в отдельный модуль
 
-  //   const rpcUrl = this.configService.get<string>('RPC_URL');
+    const rpcUrl = this.configService.get<string>('RPC_URL');
 
-  //   this.web3 = new Web3(rpcUrl);
+    this.web3 = new Web3(rpcUrl);
 
-  //   const contractData = [
-  //     {
-  //       abi: this.configService.get<string>('CONTRACT_ABI_1'),
-  //       address: this.configService.get<string>('CONTRACT_ADDRESS_TOKEN_1'),
-  //     },
-  //     {
-  //       abi: this.configService.get<string>('CONTRACT_ABI_2'),
-  //       address: this.configService.get<string>('CONTRACT_ADDRESS_TOKEN_2'),
-  //     },
-  //   ];
+    const contractData = [
+      {
+        abi: this.configService.get<string>('CONTRACT_ABI_1'),
+        address: this.configService.get<string>('CONTRACT_ADDRESS_TOKEN_1'),
+      },
+      {
+        abi: this.configService.get<string>('CONTRACT_ABI_2'),
+        address: this.configService.get<string>('CONTRACT_ADDRESS_TOKEN_2'),
+      },
+    ];
 
-  //   this.contracts = contractData
-  //     .filter(({ abi, address }) => abi && address)
-  //     .map(
-  //       ({ abi, address }) =>
-  //         new this.web3.eth.Contract(JSON.parse(abi), address),
-  //     );
+    this.contracts = contractData
+      .filter(({ abi, address }) => abi && address)
+      .map(
+        ({ abi, address }) =>
+          new this.web3.eth.Contract(JSON.parse(abi), address),
+      );
 
-  //   if (this.contracts.length === 0) {
-  //     throw new Error('No valid contracts found in the configuration.');
-  //   }
-  // }
+    if (this.contracts.length === 0) {
+      throw new Error('No valid contracts found in the configuration.');
+    }
+  }
 
-  // async onModuleInit() {
-  //   await this.subscribeToEvents();
-  // }
+  async onModuleInit() {
+    await this.subscribeToEvents();
+  }
 
-  // private async subscribeToEvents() {
-  //   this.contracts.forEach((contract, index) => {
-  //     contract.events
-  //       .OrderCreated({}, (error, event) =>
-  //         this.handleEvent(
-  //           error,
-  //           event,
-  //           'OrderCreated',
-  //           this.handleOrderCreated,
-  //         ),
-  //       )
-  //       .on('connected', () => console.log(`Connected to OrderCreated`))
-  //       .on('error', (err: any) => console.error(`Error OrderCreated`, err));
+  private async subscribeToEvents() {
+    this.contracts.forEach((contract, index) => {
+      contract.events
+        .OrderCreated({}, (error, event) =>
+          this.handleEvent(
+            error,
+            event,
+            'OrderCreated',
+            this.handleOrderCreated,
+          ),
+        )
+        .on('connected', () => console.log(`Connected to OrderCreated`))
+        .on('error', (err: any) => console.error(`Error OrderCreated`, err));
 
-  //     contract.events
-  //       .OrderMatched({}, (error, event) =>
-  //         this.handleEvent(
-  //           error,
-  //           event,
-  //           'OrderMatched',
-  //           this.handleOrderMatched,
-  //         ),
-  //       )
-  //       .on('connected', () => console.log(`Connected to OrderMatched`))
-  //       .on('error', (err: any) => console.error(`Error OrderMatched`, err));
+      contract.events
+        .OrderMatched({}, (error, event) =>
+          this.handleEvent(
+            error,
+            event,
+            'OrderMatched',
+            this.handleOrderMatched,
+          ),
+        )
+        .on('connected', () => console.log(`Connected to OrderMatched`))
+        .on('error', (err: any) => console.error(`Error OrderMatched`, err));
 
-  //     contract.events
-  //       .OrderCancelled({}, (error, event) =>
-  //         this.handleEvent(
-  //           error,
-  //           event,
-  //           'OrderCancelled',
-  //           this.handleOrderCancelled,
-  //         ),
-  //       )
-  //       .on('connected', () => console.log(`Connected to OrderCancelled`))
-  //       .on('error', (err: any) => console.error(`Error OrderCancelled`, err));
-  //   });
-  // }
+      contract.events
+        .OrderCancelled({}, (error, event) =>
+          this.handleEvent(
+            error,
+            event,
+            'OrderCancelled',
+            this.handleOrderCancelled,
+          ),
+        )
+        .on('connected', () => console.log(`Connected to OrderCancelled`))
+        .on('error', (err: any) => console.error(`Error OrderCancelled`, err));
+    });
+  }
 
-  // private async handleEvent(
-  //   error: any,
-  //   event: any,
-  //   eventName: string,
-  //   handler: (event: any) => Promise<void>,
-  // ) {
-  //   if (error) {
-  //     console.error(`Error processing ${eventName}:`, error);
-  //     return;
-  //   }
+  private async handleEvent(
+    error: any,
+    event: any,
+    eventName: string,
+    handler: (event: any) => Promise<void>,
+  ) {
+    if (error) {
+      console.error(`Error processing ${eventName}:`, error);
+      return;
+    }
 
-  //   try {
-  //     await handler(event);
-  //     console.log(`${eventName} processed successfully:`, event);
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // }
+    try {
+      await handler(event);
+      console.log(`${eventName} processed successfully:`, event);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
-  // private async handleOrderCreated(event: any) {
-  //   const { tokenA, tokenB, user, amountA, amountB } = event.returnValues;
-  //   const order = new Order();
-  //   order.tokenAAddress = tokenA;
-  //   order.tokenBAddress = tokenB;
-  //   order.userAddress = user;
-  //   order.amountA = amountA;
-  //   order.amountB = amountB;
-  //   order.active = true;
-  //   await this.orderRepository.save(order);
-  // }
+  private async handleOrderCreated(event: any) {
+    const { tokenA, tokenB, user, amountA, amountB } = event.returnValues;
+    const order = new Order();
+    order.tokenAAddress = tokenA;
+    order.tokenBAddress = tokenB;
+    order.userAddress = user;
+    order.amountA = amountA;
+    order.amountB = amountB;
+    order.active = true;
+    await this.orderRepository.save(order);
+  }
 
-  // private async handleOrderMatched(event: any) {
-  //   const { orderId, amountA, amountB } = event.returnValues;
-  //   const order = await this.orderRepository.findOne({
-  //     where: { id: orderId },
-  //   });
+  private async handleOrderMatched(event: any) {
+    const { orderId, amountA, amountB } = event.returnValues;
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
 
-  //   if (order) {
-  //     order.amountA = amountA;
-  //     order.amountB = amountB;
+    if (order) {
+      order.amountA = amountA;
+      order.amountB = amountB;
 
-  //     if (Number(amountA) === Number(amountB)) {
-  //       order.active = false;
-  //     }
+      if (Number(amountA) === Number(amountB)) {
+        order.active = false;
+      }
 
-  //     await this.orderRepository.save(order);
-  //   }
-  // }
+      await this.orderRepository.save(order);
+    }
+  }
 
-  // private async handleOrderCancelled(event: any) {
-  //   const { orderId } = event.returnValues;
-  //   const order = await this.orderRepository.findOne({
-  //     where: { id: orderId },
-  //   });
+  private async handleOrderCancelled(event: any) {
+    const { orderId } = event.returnValues;
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
 
-  //   if (order) {
-  //     order.active = false;
-  //     await this.orderRepository.save(order);
-  //   }
+    if (order) {
+      order.active = false;
+      await this.orderRepository.save(order);
+    }
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
